@@ -1,0 +1,24 @@
+/* index.css - small page-specific overrides */
+
+/* Make header full-width fixed, and ensure content below is visible */
+#siteHeader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: white;
+}
+
+/* add top padding equal to header height to main content (adjust if your header height differs) */
+main { padding-top: 72px; }
+
+/* show nav links on md and above */
+@media (min-width: 768px) {
+  #navLinks { display: flex !important; }
+}
+
+/* small improvement to hero spacing on very small screens */
+@media (max-width: 480px) {
+  .hero { padding-top: 36px; padding-bottom: 36px; }
+}
