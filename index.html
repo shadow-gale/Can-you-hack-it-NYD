@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LinkedUp</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Local stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+
+  <!-- NAVBAR -->
+  <header class="w-full bg-white shadow-sm">
+    <nav class="max-w-full px-6 py-4 flex items-center justify-between">
+      <!-- LEFT: hamburger + logo + title -->
+      <div class="flex items-center gap-3">
+        <!-- hamburger -->
+        <button id="mobileMenuBtn" class="p-2 rounded text-gray-700 hover:bg-gray-100 md:hidden" aria-label="open menu">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- logo + text -->
+        <img src="image.png" alt="LinkedUp Logo" class="w-10 h-10 rounded-md object-cover" />
+        <div>
+          <div class="text-lg font-bold text-indigo-600 leading-none">LinkedUp</div>
+          <div class="text-xs text-gray-500 -mt-0.5">Connect fast. Build faster.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: nav links (always visible now) -->
+      <div id="navLinks" class="flex items-center gap-6 text-sm">
+        <a href="#about" class="text-gray-700 hover:text-indigo-600">About</a>
+        <a href="#stats" class="text-gray-700 hover:text-indigo-600">Stats</a>
+        <a href="#join" class="text-gray-700 hover:text-indigo-600">Join</a>
+        <a href="#register" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition">Register</a>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div id="mobileNav" class="md:hidden hidden bg-white border-t border-gray-100">
+      <div class="px-4 py-3 flex flex-col gap-2">
+        <a href="#about" class="block text-gray-700 py-2">About</a>
+        <a href="#stats" class="block text-gray-700 py-2">Stats</a>
+        <a href="#join" class="block text-gray-700 py-2">Join</a>
+        <a href="#register" class="block text-gray-700 py-2">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero pt-24 pb-16">
+    <div class="overlay" aria-hidden="true"></div>
+    <div class="max-w-6xl mx-auto px-6 lg:px-8 relative">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div class="py-6">
+          <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight">Welcome to LinkedUp 🚀</h1>
+
+          <div class="mt-4 hero-phrase-wrapper text-lg sm:text-xl text-white/95">
+            <span id="phrase0" class="fade-text show">Find your perfect short-term match.</span>
+            <span id="phrase1" class="fade-text">Connect. Collaborate. Create impact.</span>
+            <span id="phrase2" class="fade-text">Get matched in minutes, not days.</span>
+          </div>
+
+          <p class="mt-6 text-white/90 max-w-xl">
+            LinkedUp matches you with the right people for short-term collaborations — hackathons, events,
+            competitions, study groups and more.
+          </p>
+
+          <div class="mt-8 flex gap-4">
+            <button id="joinNowBtn" class="px-5 py-3 rounded-lg bg-white text-indigo-600 font-semibold btn-smooth">
+              Become an Up’s
+            </button>
+            <a href="#about" class="px-5 py-3 rounded-lg border border-white/30 text-white btn-smooth">Learn more</a>
+          </div>
+        </div>
+
+        <!-- right card -->
+        <div class="w-full lg:w-[360px]">
+          <div class="bg-white rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm text-gray-500">Active Up’s</div>
+                <div id="heroUps" class="text-3xl font-extrabold text-gray-900">1,200+</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm text-gray-500">Days Live</div>
+                <div id="heroDays" class="text-3xl font-extrabold text-gray-900">365+</div>
+              </div>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+              <div class="p-3 rounded-lg bg-gray-50 border border-gray-100 text-sm text-gray-700">
+                <div>Hackathons</div>
+                <div class="font-semibold mt-1 text-gray-900">500+</div>
+              </div>
+              <div class="p-3 rounded-lg bg-gray-50 border border-gray-100 text-sm text-gray-700">
+                <div>Success Match</div>
+                <div class="font-semibold mt-1 text-gray-900">99%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="py-16 px-6 max-w-5xl mx-auto text-center fade-reveal">
+    <h3 class="text-3xl font-bold mb-6 text-indigo-600">What is LinkedUp?</h3>
+    <p class="text-gray-700 leading-relaxed mb-8">
+      LinkedUp is a platform that connects you to the most relevant users according to your needs and skills.
+      Whether it’s for hackathons, events, competitions, studies, or games — LinkedUp ensures you find the right people.
+    </p>
+    <div class="grid md:grid-cols-3 gap-6 text-left">
+      <div class="p-4 bg-gray-50 rounded-lg shadow-sm fade-reveal">
+        <h4 class="font-semibold text-indigo-600">🎯 Relevant Matches</h4>
+        <p class="text-gray-600 mt-2 text-sm">Find people who match your skills and goals instantly.</p>
+      </div>
+      <div class="p-4 bg-gray-50 rounded-lg shadow-sm fade-reveal">
+        <h4 class="font-semibold text-indigo-600">⚡ Quick Connections</h4>
+        <p class="text-gray-600 mt-2 text-sm">Form teams for hackathons and events in minutes.</p>
+      </div>
+      <div class="p-4 bg-gray-50 rounded-lg shadow-sm fade-reveal">
+        <h4 class="font-semibold text-indigo-600">🌍 Build Together</h4>
+        <p class="text-gray-600 mt-2 text-sm">Collaborate, innovate, and grow your network.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section id="stats" class="bg-white py-16 px-6">
+    <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div>
+        <h4 class="text-4xl font-bold text-indigo-600">1,200+</h4>
+        <p class="text-gray-600">Active Up’s</p>
+      </div>
+      <div>
+        <h4 class="text-4xl font-bold text-indigo-600">365+</h4>
+        <p class="text-gray-600">Days Active</p>
+      </div>
+      <div>
+        <h4 class="text-4xl font-bold text-indigo-600">500+</h4>
+        <p class="text-gray-600">Hackathons Joined</p>
+      </div>
+      <div>
+        <h4 class="text-4xl font-bold text-indigo-600">99%</h4>
+        <p class="text-gray-600">Success Match</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOIN -->
+  <section id="join" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-20 text-center">
+    <h3 class="text-3xl font-bold mb-4">Become an Up’s at LinkedUp ✨</h3>
+    <p class="max-w-2xl mx-auto mb-8">
+      Be a part of an active, driven, and skilled network. Join and unlock exclusive opportunities.
+    </p>
+    <button id="joinNowBtnDuplicate" class="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg shadow btn-smooth">Join Now</button>
+  </section>
+
+  <!-- REGISTER -->
+  <section id="register" class="py-16 px-6 max-w-3xl mx-auto text-center">
+    <h3 class="text-2xl font-bold text-indigo-600 mb-6">Why You Need to Register on LinkedUp?</h3>
+    <ul class="text-gray-700 leading-relaxed space-y-4 text-left list-disc list-inside">
+      <li>Get access to all upcoming hackathons tailored to your interests.</li>
+      <li>Use skill-based filters to discover the most relevant hackathons for you.</li>
+      <li>See how many Up’s are planning to participate in each hackathon.</li>
+      <li>Search and connect with relevant Up’s to form strong teams.</li>
+    </ul>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="text-center py-6 bg-gray-100 mt-10">
+    <p class="text-gray-600 text-sm">&copy; <span id="year"></span> LinkedUp. All rights reserved.</p>
+  </footer>
+
+  <!-- MODAL -->
+  <div id="joinModal" class="hidden fixed inset-0 z-50 items-center justify-center" aria-hidden="true">
+    <div id="joinModalBackdrop" class="absolute inset-0" aria-hidden="true">
+      <!-- animated gradient element present by default (JS will toggle classes) -->
+      <div class="animated-gradient hidden" aria-hidden="true"></div>
+    </div>
+
+    <div class="relative w-full max-w-md mx-4 modal-panel">
+      <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+        <button id="joinModalClose" aria-label="Close modal" class="absolute right-3 top-3 text-gray-600 hover:text-gray-800">✕</button>
+        <div class="p-6">
+          <h2 id="modalTitle" class="text-2xl font-bold mb-2 text-gray-900">Join LinkedUp</h2>
+          <p class="text-gray-600 mb-4">Connect with collaborators for hackathons, study groups, and games.</p>
+          <form id="joinModalForm" class="space-y-3">
+            <input required name="fullname" placeholder="Full Name" class="w-full px-4 py-3 rounded-lg border border-gray-200" />
+            <input required name="email" type="email" placeholder="Email address" class="w-full px-4 py-3 rounded-lg border border-gray-200" />
+            <input name="password" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg border border-gray-200" />
+            <select name="interest" class="w-full px-4 py-3 rounded-lg border border-gray-200">
+              <option value="">Select your interest</option>
+              <option>AI / ML</option>
+              <option>Web Dev</option>
+              <option>Mobile Apps</option>
+              <option>Design</option>
+            </select>
+            <div class="flex justify-end gap-3 mt-3">
+              <button type="button" id="joinModalCancel" class="px-4 py-2 rounded-lg border">Cancel</button>
+              <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white">Join Now</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local JS -->
+  <script src="index.js" defer></script>
+</body>
+</html>
