@@ -1,235 +1,159 @@
-/* ===== index.js =====
-   Behavior:
-   - hero phrase rotation (fade)
-   - reveal-on-scroll (.fade-reveal)
-   - mobile nav toggle (hamburger)
-   - modal open/close with animated gradient backdrop
-   - Enter-key opens modal (unless typing)
-   - focus trap + accessibility basics
-   - small non-blocking toast after demo submit
-   ================================================== */
-
-/* set dynamic year */
-(function setYear() {
-    const yearEl = document.getElementById('year');
+// index.js — Modal + Join form handling (no top-level Firebase imports; saves profile then redirects)
+document.addEventListener("DOMContentLoaded", () => {
+    // DOM refs
+    const openButtons = Array.from(
+      [document.getElementById("joinNowBtn"), document.getElementById("joinNowBtnDuplicate")]
+    ).filter(Boolean);
+  
+    const modal = document.getElementById("joinModal");
+    const backdrop = document.getElementById("joinModalBackdrop");
+    const btnClose = document.getElementById("joinModalClose");
+    const btnCancel = document.getElementById("joinModalCancel");
+    const form = document.getElementById("joinModalForm");
+    const yearEl = document.getElementById("year");
+  
+    // set footer year
     if (yearEl) yearEl.textContent = new Date().getFullYear();
-  })();
   
-  /* ===== Hero phrase rotation (fade) ===== */
-  (function heroPhrases() {
-    const ids = ['phrase0', 'phrase1', 'phrase2'];
-    let cur = 0;
-    const intervalMs = 3000;
-  
-    function show(index) {
-      ids.forEach((id, i) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (i === index) el.classList.add('show');
-        else el.classList.remove('show');
-      });
-    }
-  
-    // initial
-    show(0);
-    const timer = setInterval(() => {
-      cur = (cur + 1) % ids.length;
-      show(cur);
-    }, intervalMs);
-  
-    // respect reduced motion
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (mq && mq.matches) {
-      clearInterval(timer);
-      show(0);
-    }
-  })();
-  
-  /* ===== Reveal on scroll for .fade-reveal ===== */
-  (function revealOnScroll() {
-    const els = document.querySelectorAll('.fade-reveal');
-    if (!els.length) return;
-    const io = new IntersectionObserver((entries, obs) => {
-      entries.forEach(en => {
-        if (en.isIntersecting) {
-          en.target.classList.add('visible');
-          obs.unobserve(en.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    els.forEach(el => io.observe(el));
-  })();
-  
-  /* ===== Mobile nav toggle (hamburger left) ===== */
-  (function mobileNavToggle() {
-    const mobileBtn = document.getElementById('mobileMenuBtn');
-    const mobileNav = document.getElementById('mobileNav');
-    if (!mobileBtn || !mobileNav) return;
-  
-    mobileNav.classList.add('hidden');
-  
-    mobileBtn.addEventListener('click', () => {
-      const isHidden = mobileNav.classList.contains('hidden');
-      if (isHidden) {
-        mobileNav.classList.remove('hidden');
-        mobileNav.classList.add('show');
-      } else {
-        mobileNav.classList.remove('show');
-        mobileNav.classList.add('hidden');
-      }
-    });
-  
-    // hide mobile nav on desktop resize
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 768) {
-        mobileNav.classList.remove('show');
-        mobileNav.classList.add('hidden');
-      }
-    }, { passive: true });
-  })();
-  
-  /* ===== Modal logic: open/close, animated gradient, Enter behavior, focus trap ===== */
-  (function modalLogic() {
-    const openButtons = [
-      document.getElementById('joinNowBtn'),
-      document.getElementById('joinNowBtnDuplicate')
-    ].filter(Boolean);
-  
-    const modal = document.getElementById('joinModal');
-    const backdrop = document.getElementById('joinModalBackdrop');
-    const btnClose = document.getElementById('joinModalClose');
-    const btnCancel = document.getElementById('joinModalCancel');
-    const form = document.getElementById('joinModalForm');
-  
-    if (!modal || !backdrop) {
-      // If markup missing, bail gracefully.
-      return;
-    }
-  
-    // create the animated-gradient element inside backdrop if not present
+    // ensure animated gradient element exists
     function ensureAnimatedGradient() {
-      let ag = backdrop.querySelector('.animated-gradient');
+      if (!backdrop) return null;
+      let ag = backdrop.querySelector(".animated-gradient");
       if (!ag) {
-        ag = document.createElement('div');
-        ag.className = 'animated-gradient hidden';
-        ag.setAttribute('aria-hidden', 'true');
+        ag = document.createElement("div");
+        ag.className = "animated-gradient hidden";
+        ag.setAttribute("aria-hidden", "true");
         backdrop.insertBefore(ag, backdrop.firstChild);
       }
       return ag;
     }
-  
-    let animatedGradient = ensureAnimatedGradient();
-    let lastFocused = null;
+    const animatedGradient = ensureAnimatedGradient();
   
     function openModal() {
-      lastFocused = document.activeElement;
-      modal.classList.remove('hidden');
-      modal.classList.add('show');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('modal-open');
+      if (!modal) return;
+      modal.classList.remove("hidden");
+      modal.classList.add("show", "flex");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
   
-      // show gradient and animate if user allows motion
-      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (!mq.matches && animatedGradient) {
-        animatedGradient.classList.remove('hidden');
-        // ensure CSS paints before activating animation
-        requestAnimationFrame(() => {
-          backdrop.classList.add('animate-gradient');
-        });
-      } else if (animatedGradient) {
-        // no animation fallback: keep gradient visible but don't animate
-        animatedGradient.classList.remove('hidden');
-        backdrop.classList.remove('animate-gradient');
+      // show background animation if not reduced-motion
+      if (animatedGradient) {
+        animatedGradient.classList.remove("hidden");
+        const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+        if (!mq.matches && backdrop) backdrop.classList.add("animate-gradient");
       }
   
-      // focus first focusable element inside modal
-      const first = modal.querySelector('input, select, textarea, button');
+      // focus first input
+      const first = modal.querySelector("input, select, textarea, button");
       if (first) first.focus();
   
-      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener("keydown", onKeydown);
     }
   
     function closeModal() {
-      // stop gradient animation gracefully
-      if (animatedGradient) {
-        backdrop.classList.remove('animate-gradient');
-        // hide the gradient after a short delay to allow fade
-        setTimeout(() => animatedGradient && animatedGradient.classList.add('hidden'), 320);
-      }
+      if (!modal) return;
+      if (backdrop) backdrop.classList.remove("animate-gradient");
+      if (animatedGradient) setTimeout(() => animatedGradient.classList.add("hidden"), 260);
   
-      modal.classList.remove('show');
-      modal.classList.add('hidden');
-      modal.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('modal-open');
-  
-      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
-      document.removeEventListener('keydown', onKeyDown);
+      modal.classList.remove("show", "flex");
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+      document.removeEventListener("keydown", onKeydown);
     }
   
-    function onKeyDown(e) {
-      if (e.key === 'Escape') { closeModal(); return; }
-  
-      if (e.key === 'Tab') {
-        const focusable = modal.querySelectorAll('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])');
-        if (!focusable.length) return;
-        const first = focusable[0], last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
+    function onKeydown(e) {
+      if (e.key === "Escape") closeModal();
     }
   
-    // attach event handlers
-    openButtons.forEach(btn => btn.addEventListener('click', openModal));
-    if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+    openButtons.forEach((b) => b.addEventListener("click", (ev) => { ev.preventDefault(); openModal(); }));
   
-    // click outside to close
-    modal.addEventListener('click', (ev) => {
-      if (ev.target === modal || ev.target === backdrop) closeModal();
-    });
+    if (btnClose) btnClose.addEventListener("click", (e) => { e.preventDefault(); closeModal(); });
+    if (btnCancel) btnCancel.addEventListener("click", (e) => { e.preventDefault(); closeModal(); });
   
-    // demo form submit: replace with real API
-    if (form) {
-      form.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Joining...';
-        }
-        setTimeout(() => {
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Join Now'; }
-          closeModal();
-          showToast('Thanks! Check your email to confirm.');
-        }, 900);
+    // backdrop click closes
+    if (backdrop) backdrop.addEventListener("click", (e) => { closeModal(); });
+  
+    // click outside panel (modal root) closes
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
       });
     }
   
-    // Open modal on Enter key when user is not typing in an input/select/textarea
-    window.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
+    // allow Enter to open modal when not typing
+    window.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
       const active = document.activeElement;
       const tag = active && active.tagName ? active.tagName.toLowerCase() : null;
-      const typingTags = ['input','textarea','select'];
-      if (typingTags.includes(tag)) return; // user typing -> ignore
-      openModal();
+      const typing = ["input", "textarea", "select"];
+      if (!typing.includes(tag)) {
+        if (modal && modal.classList.contains("hidden")) openModal();
+      }
     });
   
-    /* small toast helper (non-blocking) */
-    function showToast(msg, timeout=3200) {
-      const t = document.createElement('div');
-      t.textContent = msg;
-      t.className = 'fixed left-1/2 -translate-x-1/2 bottom-8 bg-indigo-600 text-white px-4 py-2 rounded-md shadow-lg z-60';
-      document.body.appendChild(t);
-      setTimeout(()=> t.remove(), timeout);
+    // Join form submit handler: save to localStorage (profile key used by profile.js) + redirect to profile.html
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+  
+        const fullname = (form.fullname && form.fullname.value || "").trim();
+        const email = (form.email && form.email.value || "").trim();
+        const password = (form.password && form.password.value || "").trim();
+        const interest = (form.interest && form.interest.value || "").trim();
+  
+        // basic validation
+        if (!fullname) { alert("Please enter your full name."); form.fullname.focus(); return; }
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) { alert("Please enter a valid email."); form.email.focus(); return; }
+        if (!password || password.length < 6) { alert("Password should be at least 6 characters."); form.password.focus(); return; }
+  
+        // Build profile object in the exact shape profile.js expects
+        const profile = {
+          fullname,
+          subtitle: `${interest ? interest + " enthusiast" : ""}`.trim(),
+          email,
+          phone: "",
+          location: "",
+          bio: "",
+          linkedin: "",
+          github: "",
+          skills: "",
+          updatedAt: new Date().toLocaleString("en-IN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+        };
+  
+        // 1) Save profile to the key profile.js reads: linkedup_profile_v1
+        try {
+          localStorage.setItem("linkedup_profile_v1", JSON.stringify(profile));
+          console.log("Saved current profile to linkedup_profile_v1");
+        } catch (err) {
+          console.warn("Failed to save profile to localStorage:", err);
+        }
+  
+        // 2) Also append to joined-users list (for admin / demo)
+        try {
+          const key = "linkedup_joined_users_v1";
+          const raw = localStorage.getItem(key);
+          const arr = raw ? JSON.parse(raw) : [];
+          arr.push({
+            id: `local-${Date.now()}`,
+            fullname, email, interest,
+            createdAt: new Date().toISOString()
+          });
+          localStorage.setItem(key, JSON.stringify(arr));
+        } catch (err) {
+          console.warn("Failed to save joined users list:", err);
+        }
+  
+        // 3) Close modal and redirect to profile.html (same folder)
+        closeModal();
+  
+        // small UX delay to let modal close animation finish
+        setTimeout(() => {
+          // If you want query params, you could pass ?demo=1
+          window.location.href = "profile.html";
+        }, 180);
+      });
     }
   
-    // Ensure animatedGradient exists on load
-    animatedGradient = ensureAnimatedGradient();
-  })();
+  }); // DOMContentLoaded end
   
