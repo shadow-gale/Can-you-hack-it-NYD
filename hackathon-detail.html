@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hackathon detail</title>
+  <style>
+    body{font-family:system-ui;background:#071126;color:#e6eef8;padding:22px}
+    .card{background:#06101d;border-radius:12px;padding:18px;max-width:900px;margin:0 auto}
+    h1{margin:0 0 8px 0}
+    .meta{color:#9fb0cf;margin-top:6px}
+    .btn{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:#071026;color:#e6eef8;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="content">
+      <h1>Loading...</h1>
+      <div class="meta" id="meta"></div>
+      <p id="problem"></p>
+      <div style="margin-top:10px">
+        <button id="btnClose" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as fb from './firebase.js';
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    const h1 = document.querySelector('h1');
+    const meta = document.getElementById('meta');
+    const problem = document.getElementById('problem');
+    const btnClose = document.getElementById('btnClose');
+
+    async function load(){
+      if(!id) {
+        h1.textContent = 'Missing id in URL';
+        return;
+      }
+      try {
+        const data = await fb.getHackathonById(id);
+        if(!data) {
+          h1.textContent = 'Not found';
+          problem.textContent = '';
+          return;
+        }
+        h1.textContent = data.name || 'Untitled';
+        meta.textContent = `${data.date ? new Date(data.date).toLocaleDateString() : 'Date N/A'} • Skills: ${(data.skills||[]).join(', ')}`;
+        problem.textContent = data.problem || '';
+      } catch(err) {
+        console.error(err);
+        h1.textContent = 'Error loading';
+        problem.textContent = err.message || err;
+      }
+    }
+
+    btnClose.addEventListener('click', ()=> window.close());
+    load();
+  </script>
+</body>
+</html>
