@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Profile — Up Together demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    :root{--bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#0a66c2}
+    body{font-family:system-ui,Segoe UI,Roboto;margin:0;background:var(--bg);color:#072034}
+    .wrap{max-width:900px;margin:32px auto;padding:18px}
+    .card{background:var(--card);padding:18px;border-radius:12px;border:1px solid #e6f0fb}
+    .row{display:flex;gap:16px;align-items:center}
+    .avatar{width:110px;height:110px;border-radius:12px;background:#eef6ff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:var(--accent)}
+    h1{margin:0 0 6px}
+    .meta{color:var(--muted);font-size:13px;margin-bottom:10px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .chip{background:#f3f6ff;padding:6px 10px;border-radius:999px;font-size:13px;border:1px solid #e8f2ff}
+    .btn{padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#2b9cff);color:#fff;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid #d1e8ff;color:var(--accent)}
+    .muted{color:var(--muted)}
+    .requests{margin-top:14px}
+    .req-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid #eef6ff;margin-top:8px;background:#fff}
+    .small{font-size:13px;color:var(--muted)}
+    .notice{margin-top:12px;padding:10px;border-radius:8px;background:#fffbe6;border:1px solid #fff0b8}
+    a.link{color:var(--accent);text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="profileCard">
+      <div class="row">
+        <div class="avatar" id="avatar">U</div>
+        <div style="flex:1">
+          <h1 id="name">User Name</h1>
+          <div class="meta" id="username">@username • <span id="location">Location</span></div>
+          <div id="bio" class="small">Bio / short description will show here.</div>
+          <div class="chips" id="skills"></div>
+          <div style="margin-top:12px">
+            <button class="btn" id="upBtn">Up Together</button>
+            <button class="btn btn-ghost" id="msgBtn" style="margin-left:8px">Message</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="requests" id="requestsArea" style="display:none">
+        <h3 style="margin-top:18px">Incoming Requests</h3>
+        <div id="incomingList"></div>
+      </div>
+
+      <div class="notice" id="statusNotice" style="display:none"></div>
+    </div>
+
+    <div style="margin-top:14px" class="card">
+      <h3>Debug / Local testing</h3>
+      <div class="small">For testing, set who you are (CURRENT_USER) in localStorage. If not set, you'll be prompted to pick an identity.</div>
+      <div style="margin-top:10px">
+        <select id="setUserSelect"></select>
+        <button id="setUserBtn" class="btn" style="margin-left:8px">Set as CURRENT_USER</button>
+        <button id="clearBtn" class="btn btn-ghost" style="margin-left:8px">Clear CURRENT_USER</button>
+      </div>
+      <div style="margin-top:10px" class="small">Current: <span id="currentUserDisplay">—</span></div>
+    </div>
+  </div>
+
+<script>
+/* ---------- dummy users ---------- */
+const DUMMY_USERS = {
+  'alice': { id:'alice', name:'Alice Sharma', username:'alice', email:'alice@example.com', location:'Bengaluru', bio:'ML enthusiast. Loves hackathons.', skills:['Python','TensorFlow','Docker'] },
+  'bob':   { id:'bob',   name:'Bob Verma',   username:'bob',   email:'bob@example.com',   location:'Mumbai',    bio:'Frontend dev and React fan.', skills:['JavaScript','React','HTML','CSS'] },
+  'charu': { id:'charu', name:'Charu Singh', username:'charu', email:'charu@example.com', location:'Delhi',     bio:'Data viz & UX designer.', skills:['D3','SVG','CSS','HTML'] },
+  'deep':  { id:'deep',  name:'Deep Patel',  username:'deep',  email:'deep@example.com',  location:'Hyderabad', bio:'Fullstack dev, likes infra.', skills:['Node.js','AWS','Docker'] }
+};
+
+/* ---------- storage keys ---------- */
+const KEY_CURRENT = 'CURRENT_USER';       // stores current logged-in user id (string)
+const KEY_USERS   = 'LU_USERS';           // optional array of user objects
+const KEY_REQ     = 'LU_REQUESTS';        // array of request {id,from,to,status,ts}
+const KEY_CONNS   = 'LU_CONNECTIONS';     // object map { userId: [connectedUserIds...] }
+
+/* ---------- helpers ---------- */
+function qs(id){ return document.getElementById(id); }
+function getQuery(name){ return new URLSearchParams(location.search).get(name); }
+function nowTs(){ return new Date().toISOString(); }
+function loadJSON(k, fallback){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : fallback; }catch(e){ return fallback; } }
+function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+/* ---------- current user management ---------- */
+function getCurrentUserId(){
+  return localStorage.getItem(KEY_CURRENT) || null;
+}
+function setCurrentUserId(id){
+  if(!id) localStorage.removeItem(KEY_CURRENT);
+  else localStorage.setItem(KEY_CURRENT, id);
+  renderCurrentUserUI();
+}
+function renderCurrentUserUI(){
+  const cur = getCurrentUserId();
+  qs('currentUserDisplay').textContent = cur || 'Not set';
+}
+
+/* ---------- load profile data (priority: LU_USERS -> dummy -> null) ---------- */
+function getProfile(uid){
+  const localUsers = loadJSON(KEY_USERS, []);
+  const found = (localUsers||[]).find(u => u.id===uid || u.email===uid || u.name===uid);
+  if(found) return found;
+  if(DUMMY_USERS[uid]) return DUMMY_USERS[uid];
+  // fallback: see if user object stored in localstorage array as email/id
+  return null;
+}
+
+/* ---------- requests & connections ---------- */
+function getRequests(){ return loadJSON(KEY_REQ, []); }
+function saveRequests(arr){ saveJSON(KEY_REQ, arr); }
+function getConnections(){ return loadJSON(KEY_CONNS, {}); }
+function saveConnections(obj){ saveJSON(KEY_CONNS, obj); }
+
+function sendRequest(from, to){
+  const reqs = getRequests();
+  // prevent duplicate pending request
+  const dup = reqs.find(r => r.from===from && r.to===to && r.status==='pending');
+  if(dup) return { ok:false, message:'Request already pending' };
+  const id = 'r_' + Math.random().toString(36).slice(2,9);
+  const req = { id, from, to, status:'pending', ts: nowTs() };
+  reqs.push(req);
+  saveRequests(reqs);
+  return { ok:true, id };
+}
+
+function acceptRequest(reqId){
+  const reqs = getRequests();
+  const r = reqs.find(x=>x.id===reqId);
+  if(!r) return { ok:false, message:'Request not found' };
+  if(r.status!=='pending') return { ok:false, message:'Request not pending' };
+  r.status = 'accepted';
+  r.resolvedAt = nowTs();
+  saveRequests(reqs);
+  // add to connections both ways
+  const conns = getConnections();
+  conns[r.from] = Array.from(new Set([...(conns[r.from]||[]), r.to]));
+  conns[r.to]   = Array.from(new Set([...(conns[r.to]||[]), r.from]));
+  saveConnections(conns);
+  return { ok:true };
+}
+
+function rejectRequest(reqId){
+  const reqs = getRequests();
+  const r = reqs.find(x=>x.id===reqId);
+  if(!r) return { ok:false, message:'Request not found' };
+  if(r.status!=='pending') return { ok:false, message:'Already handled' };
+  r.status = 'rejected';
+  r.resolvedAt = nowTs();
+  saveRequests(reqs);
+  return { ok:true };
+}
+
+/* ---------- UI render ---------- */
+function renderProfile(uid){
+  const p = getProfile(uid);
+  if(!p){
+    qs('name').textContent = 'Unknown User';
+    qs('bio').textContent = 'No profile found for ' + uid;
+    qs('skills').innerHTML = '';
+    qs('avatar').textContent = (uid||'?').charAt(0).toUpperCase();
+    qs('username').textContent = uid;
+    return;
+  }
+  qs('name').textContent = p.name || p.fullname || p.email || p.id;
+  qs('avatar').textContent = (p.name||p.email||p.id||'U').charAt(0).toUpperCase();
+  qs('username').textContent = (p.username ? ('@'+p.username) : (p.email || p.id));
+  qs('location').textContent = p.location || '';
+  qs('bio').textContent = p.bio || '';
+  // skills
+  const sk = qs('skills'); sk.innerHTML = '';
+  (p.skills||[]).forEach(s=>{
+    const sp = document.createElement('div'); sp.className='chip'; sp.textContent = s; sk.appendChild(sp);
+  });
+}
+
+/* ---------- incoming requests UI (show only if current user === profile owner) ---------- */
+function renderIncomingRequestsFor(uid){
+  const cur = getCurrentUserId();
+  if(cur !== uid){ qs('requestsArea').style.display='none'; return; }
+  const reqs = getRequests().filter(r=>r.to===uid && r.status==='pending');
+  qs('incomingList').innerHTML = '';
+  if(reqs.length===0){ qs('requestsArea').style.display='none'; return; }
+  qs('requestsArea').style.display = '';
+  reqs.forEach(r=>{
+    const div = document.createElement('div'); div.className='req-item';
+    const left = document.createElement('div'); left.innerHTML = '<strong>' + (getProfile(r.from)?.name || r.from) + '</strong><div class="small">Sent: '+ new Date(r.ts).toLocaleString() +'</div>';
+    const right = document.createElement('div');
+    const acceptBtn = document.createElement('button'); acceptBtn.className='btn'; acceptBtn.textContent='Accept';
+    const rejectBtn = document.createElement('button'); rejectBtn.className='btn btn-ghost'; rejectBtn.textContent='Reject';
+    acceptBtn.addEventListener('click', async ()=>{
+      const res = acceptRequest(r.id);
+      if(res.ok){ renderIncomingRequestsFor(uid); showStatus('You are now connected with ' + (getProfile(r.from)?.name || r.from)); }
+      else showStatus('Error: ' + res.message, true);
+    });
+    rejectBtn.addEventListener('click', ()=>{
+      const res = rejectRequest(r.id);
+      if(res.ok){ renderIncomingRequestsFor(uid); showStatus('Request rejected'); } else showStatus('Error: '+res.message,true);
+    });
+    right.appendChild(acceptBtn); right.appendChild(document.createTextNode(' ')); right.appendChild(rejectBtn);
+    div.appendChild(left); div.appendChild(right);
+    qs('incomingList').appendChild(div);
+  });
+}
+
+/* ---------- status notice ---------- */
+function showStatus(msg, isError){
+  const el = qs('statusNotice');
+  el.style.display = ''; el.style.background = isError ? '#ffecec' : '#ecfff5'; el.style.borderColor = isError ? '#ffd6d6' : '#d6f5df';
+  el.textContent = msg;
+  setTimeout(()=>{ el.style.display='none'; }, 4000);
+}
+
+/* ---------- initialization ---------- */
+function init(){
+  renderCurrentUserUI();
+  // populate tester select with dummy users + saved LU_USERS
+  const sel = qs('setUserSelect');
+  sel.innerHTML = '';
+  Object.keys(DUMMY_USERS).forEach(k=>{
+    const o = document.createElement('option'); o.value = k; o.textContent = DUMMY_USERS[k].name + ' ('+k+')'; sel.appendChild(o);
+  });
+  // also include LU_USERS if any
+  const localUsers = loadJSON(KEY_USERS, []);
+  (localUsers||[]).forEach(u=>{
+    const o = document.createElement('option'); o.value = u.id || u.email || u.name; o.textContent = (u.name||u.email) + ' (custom)'; sel.appendChild(o);
+  });
+
+  qs('setUserBtn').addEventListener('click', ()=>{
+    const v = sel.value; if(!v) return;
+    setCurrentUserId(v);
+    showStatus('CURRENT_USER set to ' + v);
+    updateButtons();
+  });
+  qs('clearBtn').addEventListener('click', ()=>{ setCurrentUserId(null); showStatus('CURRENT_USER cleared'); updateButtons(); });
+
+  // read uid from query
+  const uid = getQuery('uid') || getQuery('id') || null;
+  renderProfile(uid);
+  renderCurrentUserUI();
+  renderIncomingRequestsFor(uid);
+
+  // Wire Up Together button
+  qs('upBtn').addEventListener('click', ()=>{
+    const from = getCurrentUserId();
+    const to = uid;
+    if(!from){ // prompt to set
+      const should = confirm('No CURRENT_USER set. Set to one of the demo users now? (OK to set Alice)');
+      if(should){ setCurrentUserId('alice'); showStatus('CURRENT_USER set to alice'); renderCurrentUserUI(); updateButtons(); }
+      else return;
+    }
+    if(getCurrentUserId() === to){ showStatus('You cannot send request to yourself', true); return; }
+    const res = sendRequest(getCurrentUserId(), to);
+    if(res.ok){ showStatus('Request sent to ' + (getProfile(to)?.name || to)); }
+    else showStatus(res.message, true);
+    renderIncomingRequestsFor(uid); // in case recipient == current user
+    updateButtons();
+  });
+
+  // Message button (demo)
+  qs('msgBtn').addEventListener('click', ()=> alert('Messaging flow not implemented in demo.'));
+
+  // populate current user select default if none
+  if(!getCurrentUserId()){
+    // set to alice by default for easy testing (but not forced)
+    // do nothing; user can set.
+  }
+
+  // update UI on storage change (another tab)
+  window.addEventListener('storage', ()=>{ renderIncomingRequestsFor(uid); renderCurrentUserUI(); updateButtons(); });
+
+  updateButtons();
+  // if current user is recipient, show incoming requests UI
+  renderIncomingRequestsFor(uid);
+}
+
+/* ---------- update buttons state (disable if already sent/connected) ---------- */
+function updateButtons(){
+  const cur = getCurrentUserId();
+  const uid = getQuery('uid') || getQuery('id') || null;
+  // disable Up Together if no profile or same user
+  if(!uid){ qs('upBtn').disabled = true; return; }
+  if(cur === uid){ qs('upBtn').disabled = true; qs('msgBtn').disabled = true; } else qs('msgBtn').disabled = false;
+
+  // if already connected, change button text
+  const conns = getConnections();
+  if(cur && uid && (conns[cur]||[]).includes(uid)){
+    qs('upBtn').textContent = 'Connected';
+    qs('upBtn').disabled = true;
+  } else {
+    qs('upBtn').textContent = 'Up Together';
+    // if a pending request exists from cur->uid show "Request pending"
+    const reqs = getRequests();
+    const pending = reqs.find(r=>r.from===cur && r.to===uid && r.status==='pending');
+    if(pending){
+      qs('upBtn').textContent = 'Request pending';
+      qs('upBtn').disabled = true;
+    } else {
+      if(cur && cur!==uid) qs('upBtn').disabled = false;
+    }
+  }
+}
+
+/* ---------- auto-prompt when no CURRENT_USER: small friendly ask ---------- */
+function maybePromptSetUser(){
+  if(getCurrentUserId()) return;
+  setTimeout(()=>{
+    if(confirm('Set demo CURRENT_USER to Alice for testing? (OK = Alice)')){
+      setCurrentUserId('alice'); showStatus('CURRENT_USER set to alice'); updateButtons();
+    }
+  }, 600);
+}
+
+/* ---------- run ---------- */
+init();
+maybePromptSetUser();
+</script>
+</body>
+</html>
